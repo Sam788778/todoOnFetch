@@ -1,21 +1,24 @@
 import styles from './list.module.css';
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 const List = ({ todos, setTodos }) => {
     const [editingId, setEditingId] = useState(null);
     const [editText, setEditText] = useState('');
 
-    useEffect(() => {
-        fetch('https://jsonplaceholder.typicode.com/todos?_limit=10')
-            .then((res) => res.json())
-            .then((data) => setTodos(data))
+        useEffect(() => {
+        const storedTodos = localStorage.getItem('todos');
+        if (storedTodos) {
+            setTodos(JSON.parse(storedTodos));
+        }else{
+            axios.get('https://jsonplaceholder.typicode.com/todos?_limit=10')
+            .then((res) => setTodos(res.data))
             .catch((error) => console.error('Error:', error));
+        }
     }, [setTodos]);
 
     const handleDelete = (id) => {
-        fetch(`https://jsonplaceholder.typicode.com/todos/${id}`, {
-            method: 'DELETE',
-        })
+        axios.delete(`https://jsonplaceholder.typicode.com/todos/${id}`)
             .then(() => {
                 setTodos((prevTodos) => prevTodos.filter((todo) => todo.id !== id));
             })
@@ -35,27 +38,27 @@ const List = ({ todos, setTodos }) => {
     };
 
     const saveEdit = (id) => {
-        fetch(`https://jsonplaceholder.typicode.com/todos/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                title: editText,
-                completed: todos.find((todo) => todo.id === id)?.completed,
-            }),
+        const completed = todos.find((todo) => todo.id === id)?.completed;
+
+        axios.put(`https://jsonplaceholder.typicode.com/todos/${id}`, {
+            title: editText,
+            completed,
         })
-            .then((res) => res.json())
-            .then((updatedTodo) => {
+            .then((res) => {
                 setTodos((prevTodos) =>
                     prevTodos.map((todo) =>
-                        todo.id === id ? { ...todo, title: updatedTodo.title } : todo
+                        todo.id === id ? { ...todo, title: res.data.title } : todo
                     )
                 );
                 setEditingId(null);
             })
             .catch((error) => console.error('Error', error));
     };
+
+    useEffect(() => {
+        localStorage.setItem('todos', JSON.stringify(todos));
+    }, [todos]);
+
 
     return (
         <div className={styles.list}>

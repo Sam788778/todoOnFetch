@@ -1,5 +1,6 @@
 import styles from './input.module.css';
 import { useState } from 'react';
+import axios from 'axios';
 
 const Input = ({ setTodos }) => {
     const [inputValue, setInputValue] = useState('');
@@ -7,19 +8,12 @@ const Input = ({ setTodos }) => {
     const handleAddTodo = () => {
         if (!inputValue.trim()) return;
 
-        fetch('https://jsonplaceholder.typicode.com/todos', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                title: inputValue,
-                completed: false,
-            }),
+        axios.post('https://jsonplaceholder.typicode.com/todos', {
+            title: inputValue,
+            completed: false,
         })
-            .then((res) => res.json())
-            .then((newTodo) => {
-                setTodos((prevTodos) => [...prevTodos, newTodo]);
+            .then((res) => {
+                setTodos((prevTodos) => [...prevTodos, res.data]);
                 setInputValue('');
             })
             .catch((error) => console.error('Error', error));
